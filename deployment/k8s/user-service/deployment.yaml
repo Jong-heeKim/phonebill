@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: user-service
-  namespace: phonebill-dev
+  namespace: phonebill-dg0508
 spec:
   replicas: 1
   selector:
@@ -17,7 +17,7 @@ spec:
       - name: phonebill
       containers:
       - name: user-service
-        image: acrdigitalgarage01.azurecr.io/phonebill/user-service:latest
+        image: acrdigitalgarage02.azurecr.io/phonebill/user-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8081

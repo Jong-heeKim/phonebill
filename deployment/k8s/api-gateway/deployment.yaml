@@ -2,7 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
-  namespace: phonebill-dev
+  namespace: phonebill-dg0508
+  labels:
+    app: api-gateway
+    service: api-gateway
 spec:
   replicas: 1
   selector:
@@ -12,47 +15,54 @@ spec:
     metadata:
       labels:
         app: api-gateway
+        service: api-gateway
     spec:
       imagePullSecrets:
-      - name: phonebill
+        - name: phonebill
       containers:
-      - name: api-gateway
-        image: acrdigitalgarage01.azurecr.io/phonebill/api-gateway:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-        envFrom:
-        - configMapRef:
-            name: cm-common
-        - configMapRef:
-            name: cm-api-gateway
-        - secretRef:
-            name: secret-common
-        resources:
-          requests:
-            cpu: 256m
-            memory: 256Mi
-          limits:
-            cpu: 1024m
-            memory: 1024Mi
-        startupProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 6
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          failureThreshold: 3
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          failureThreshold: 3
+        - name: api-gateway
+          image: acrdigitalgarage02.azurecr.io/phonebill/api-gateway:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: cm-common
+            - configMapRef:
+                name: cm-api-gateway
+            - secretRef:
+                name: secret-common
+          resources:
+            requests:
+              cpu: 256m
+              memory: 256Mi
+            limits:
+              cpu: 1024m
+              memory: 1024Mi
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 10
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1

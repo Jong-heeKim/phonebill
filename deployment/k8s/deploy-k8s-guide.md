@@ -3,9 +3,9 @@
 ## 📋 배포 개요
 
 **시스템명**: phonebill
-**네임스페이스**: phonebill-dev
-**ACR명**: acrdigitalgarage01  
-**k8s명**: aks-digitalgarage-01
+**네임스페이스**: phonebill-dg0508
+**ACR명**: acrdigitalgarage02
+**k8s명**: aks-digitalgarage-02
 **파드수**: 1개 (각 서비스)
 **리소스**: CPU 256m/1024m, 메모리 256Mi/1024Mi
 
@@ -37,7 +37,7 @@
 모든 환경 정보가 확인되어 매니페스트 파일에 반영 완료되었습니다:
 
 1. **✅ Ingress Controller External IP**: `20.214.196.128`
-2. **✅ ACR 인증 정보**: `acrdigitalgarage01` / 실제 패스워드 적용
+2. **✅ ACR 인증 정보**: `acrdigitalgarage02` / 실제 패스워드 적용
 3. **✅ Redis Service**: `redis-cache-dev-master`
 4. **✅ Database Services**:
    - User Service: `auth-postgres-dev-postgresql`
@@ -58,98 +58,105 @@ kubectl cluster-info
 
 ### 3. 네임스페이스 존재 확인
 ```bash
-kubectl get ns phonebill-dev
+kubectl get ns phonebill-dg0508
 ```
 
 ### 4. Ingress Controller External IP 확인 ✅
 ```bash
 kubectl get svc ingress-nginx-controller -n ingress-nginx
 ```
-**확인 완료**: EXTERNAL-IP = `20.214.196.128`
+**⚠️ 실제 배포 시 확인 필요**: EXTERNAL-IP 값으로 ingress.yaml 업데이트
 
 ### 5. ACR 인증 정보 확인 ✅
 ```bash
 # USERNAME 확인
-USERNAME=$(az acr credential show -n acrdigitalgarage01 --query "username" -o tsv)
+USERNAME=$(az acr credential show -n acrdigitalgarage02 --query "username" -o tsv)
 echo $USERNAME
 
 # PASSWORD 확인  
-PASSWORD=$(az acr credential show -n acrdigitalgarage01 --query "passwords[0].value" -o tsv)
+PASSWORD=$(az acr credential show -n acrdigitalgarage02 --query "passwords[0].value" -o tsv)
 echo $PASSWORD
 ```
-**확인 완료**: USERNAME = `acrdigitalgarage01`, PASSWORD = 실제 값 적용
+**⚠️ 실제 배포 시 확인 필요**: USERNAME과 PASSWORD로 secret-imagepull.yaml 업데이트
 
 ### 6. Redis Service 이름 확인 ✅
 ```bash
-kubectl get svc -n phonebill-dev | grep redis
+kubectl get svc -n phonebill-dg0508 | grep redis
 ```
-**확인 완료**: `redis-cache-dev-master` (ClusterIP)
+**⚠️ 실제 배포 시 확인 필요**: Redis Service명으로 cm-common.yaml의 REDIS_HOST 업데이트
 
 ### 7. Database Service 이름 확인 ✅
 ```bash
 # 각 서비스별 DB 확인
-kubectl get svc -n phonebill-dev | grep auth
-kubectl get svc -n phonebill-dev | grep bill  
-kubectl get svc -n phonebill-dev | grep product
+kubectl get svc -n phonebill-dg0508 | grep auth
+kubectl get svc -n phonebill-dg0508 | grep bill  
+kubectl get svc -n phonebill-dg0508 | grep product
 ```
-**확인 완료**:
-- User Service: `auth-postgres-dev-postgresql`
-- Bill Service: `bill-inquiry-postgres-dev-postgresql`  
-- Product Service: `product-change-postgres-dev-postgresql`
+**⚠️ 실제 배포 시 확인 필요**: 각 DB Service명으로 secret-{서비스명}.yaml의 DB_HOST 업데이트
+- User Service: secret-user-service.yaml
+- Bill Service: secret-bill-service.yaml
+- Product Service: secret-product-service.yaml
 
-## ✅ 매니페스트 업데이트 완료
+## ⚠️ 배포 전 필수 업데이트 사항
 
-모든 매니페스트 파일이 실제 환경 정보로 업데이트 완료되었습니다:
+다음 항목들을 실제 환경 정보로 업데이트해야 합니다:
 
-### 1. ✅ Ingress External IP 적용
+### 1. Ingress External IP 적용
 `deployment/k8s/common/ingress.yaml`:
 ```yaml
-host: phonebill-api.20.214.196.128.nip.io
+# INGRESS_IP를 실제 EXTERNAL-IP로 교체
+host: phonebill-api.INGRESS_IP.nip.io
 ```
 
-### 2. ✅ CORS Origins 적용
+### 2. CORS Origins 적용
 `deployment/k8s/common/cm-common.yaml`:
 ```yaml
-CORS_ALLOWED_ORIGINS: "http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://phonebill.20.214.196.128.nip.io"
+# INGRESS_IP를 실제 EXTERNAL-IP로 교체
+CORS_ALLOWED_ORIGINS: "http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://phonebill-api.INGRESS_IP.nip.io"
 ```
 
-### 3. ✅ ACR 인증 정보 적용
+### 3. ACR 인증 정보 적용
 `deployment/k8s/common/secret-imagepull.yaml`:
 ```yaml
+# ACR_PASSWORD_TO_BE_UPDATED와 ACR_AUTH_TO_BE_UPDATED를 실제 값으로 교체
 stringData:
   .dockerconfigjson: |
     {
       "auths": {
-        "acrdigitalgarage01.azurecr.io": {
-          "username": "acrdigitalgarage01",
-          "password": "+OY+rmOagorjWvQe/tTk6oqvnZI8SmNbY/Y2o5EDcY+ACRDCDbYk",
-          "auth": "YWNyZGlnaXRhbGdhcmFnZTAxOitPWStybU9hZ29yald2UWUvdFRrNm9xdm5aSThTbU5iWS9ZMm81RURjWStBQ1JEQ0RiWWs="
+        "acrdigitalgarage02.azurecr.io": {
+          "username": "acrdigitalgarage02",
+          "password": "ACR_PASSWORD_TO_BE_UPDATED",
+          "auth": "ACR_AUTH_TO_BE_UPDATED"
         }
       }
     }
 ```
 
-### 4. ✅ Redis Host 적용
-`deployment/k8s/common/secret-common.yaml`:
+### 4. Redis Host 적용
+`deployment/k8s/common/cm-common.yaml`:
 ```yaml
-REDIS_HOST: "redis-cache-dev-master"
+# redis-service를 실제 Redis Service명으로 교체
+REDIS_HOST: "redis-service"
 ```
 
-### 5. ✅ Database Host 적용
+### 5. Database Host 적용
 
-**user-service**: `deployment/k8s/user-service/secret-user-service.yaml`
+**user-service**: `deployment/k8s/user-service/cm-user-service.yaml`
 ```yaml
-DB_HOST: "auth-postgres-dev-postgresql"
+# user-db-service를 실제 User DB Service명으로 교체
+DB_HOST: "user-db-service"
 ```
 
 **bill-service**: `deployment/k8s/bill-service/secret-bill-service.yaml`
 ```yaml
-DB_HOST: "bill-inquiry-postgres-dev-postgresql"
+# bill-db-service를 실제 Bill DB Service명으로 교체
+DB_HOST: "bill-db-service"
 ```
 
 **product-service**: `deployment/k8s/product-service/secret-product-service.yaml`
 ```yaml
-DB_HOST: "product-change-postgres-dev-postgresql"
+# product-db-service를 실제 Product DB Service명으로 교체
+DB_HOST: "product-db-service"
 ```
 
 ## 🚀 배포 실행 가이드
@@ -173,45 +180,45 @@ kubectl apply -f deployment/k8s/kos-mock/
 
 #### 전체 객체 확인
 ```bash
-kubectl get all -n phonebill-dev
+kubectl get all -n phonebill-dg0508
 ```
 
 #### Pod 상태 확인  
 ```bash
-kubectl get pods -n phonebill-dev
+kubectl get pods -n phonebill-dg0508
 ```
 
 #### Service 확인
 ```bash
-kubectl get svc -n phonebill-dev
+kubectl get svc -n phonebill-dg0508
 ```
 
 #### Ingress 확인
 ```bash
-kubectl get ingress -n phonebill-dev
+kubectl get ingress -n phonebill-dg0508
 ```
 
 #### ConfigMap/Secret 확인
 ```bash
-kubectl get cm,secret -n phonebill-dev
+kubectl get cm,secret -n phonebill-dg0508
 ```
 
 ### 4. 로그 확인
 ```bash
 # 특정 서비스 로그 확인
-kubectl logs -f deployment/user-service -n phonebill-dev
-kubectl logs -f deployment/bill-service -n phonebill-dev
-kubectl logs -f deployment/product-service -n phonebill-dev
-kubectl logs -f deployment/api-gateway -n phonebill-dev
-kubectl logs -f deployment/kos-mock -n phonebill-dev
+kubectl logs -f deployment/user-service -n phonebill-dg0508
+kubectl logs -f deployment/bill-service -n phonebill-dg0508
+kubectl logs -f deployment/product-service -n phonebill-dg0508
+kubectl logs -f deployment/api-gateway -n phonebill-dg0508
+kubectl logs -f deployment/kos-mock -n phonebill-dg0508
 ```
 
 ### 5. Health Check 확인
 ```bash
 # 각 서비스 Health 상태 확인 (Pod 내부에서)
-kubectl exec -n phonebill-dev deployment/user-service -- curl http://localhost:8081/actuator/health
-kubectl exec -n phonebill-dev deployment/bill-service -- curl http://localhost:8082/actuator/health
-kubectl exec -n phonebill-dev deployment/product-service -- curl http://localhost:8083/actuator/health
+kubectl exec -n phonebill-dg0508 deployment/user-service -- curl http://localhost:8081/actuator/health
+kubectl exec -n phonebill-dg0508 deployment/bill-service -- curl http://localhost:8082/actuator/health
+kubectl exec -n phonebill-dg0508 deployment/product-service -- curl http://localhost:8083/actuator/health
 ```
 
 ## 🔍 문제 해결 가이드
@@ -219,22 +226,22 @@ kubectl exec -n phonebill-dev deployment/product-service -- curl http://localhos
 ### Pod 시작 실패시
 ```bash
 # Pod 상세 정보 확인
-kubectl describe pod <POD_NAME> -n phonebill-dev
+kubectl describe pod <POD_NAME> -n phonebill-dg0508
 
 # 이벤트 확인
-kubectl get events -n phonebill-dev --sort-by='.lastTimestamp'
+kubectl get events -n phonebill-dg0508 --sort-by='.lastTimestamp'
 ```
 
 ### ConfigMap/Secret 변경시
 ```bash
 # 변경 후 Pod 재시작
-kubectl rollout restart deployment/<SERVICE_NAME> -n phonebill-dev
+kubectl rollout restart deployment/<SERVICE_NAME> -n phonebill-dg0508
 ```
 
 ### 네트워크 연결 문제
 ```bash
 # Service DNS 해결 테스트
-kubectl exec -n phonebill-dev deployment/api-gateway -- nslookup user-service
+kubectl exec -n phonebill-dg0508 deployment/api-gateway -- nslookup user-service
 ```
 
 ## 📊 환경변수 매핑 테이블
@@ -302,12 +309,12 @@ kubectl exec -n phonebill-dev deployment/api-gateway -- nslookup user-service
 
 ## 🎯 배포 완료 후 접근 URL
 
-- **API Gateway**: http://phonebill-api.20.214.196.128.nip.io
-- **Swagger UI**: http://phonebill-api.20.214.196.128.nip.io/swagger-ui/index.html
-- **사용자 인증**: http://phonebill-api.20.214.196.128.nip.io/api/v1/auth  
-- **요금 조회**: http://phonebill-api.20.214.196.128.nip.io/api/v1/bills
-- **상품 변경**: http://phonebill-api.20.214.196.128.nip.io/api/v1/products
+- **API Gateway**: http://phonebill-api.{INGRESS_IP}.nip.io
+- **Swagger UI**: http://phonebill-api.{INGRESS_IP}.nip.io/swagger-ui/index.html
+- **사용자 인증**: http://phonebill-api.{INGRESS_IP}.nip.io/api/v1/auth
+- **요금 조회**: http://phonebill-api.{INGRESS_IP}.nip.io/api/v1/bills
+- **상품 변경**: http://phonebill-api.{INGRESS_IP}.nip.io/api/v1/products
 
 ---
 
-**✅ 배포 준비 완료**: 모든 환경 정보가 확인되어 매니페스트 파일에 반영되었습니다. 이제 바로 배포를 진행할 수 있습니다.
+**⚠️ 배포 전 필수 작업**: 위 섹션의 필수 업데이트 사항을 완료한 후 배포를 진행하세요.

@@ -2,14 +2,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: phonebill
-  namespace: phonebill-dev
+  namespace: phonebill-dg0508
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
   rules:
-  - host: phonebill-api.20.214.196.128.nip.io
+  - host: phonebill-api.INGRESS_IP.nip.io
     http:
       paths:
       - path: /api/v1/auth

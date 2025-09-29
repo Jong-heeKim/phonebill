@@ -2,7 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-service
-  namespace: phonebill-dev
+  namespace: phonebill-dg0508
+  labels:
+    app: product-service
 spec:
   replicas: 1
   selector:
@@ -17,7 +19,7 @@ spec:
       - name: phonebill
       containers:
       - name: product-service
-        image: acrdigitalgarage01.azurecr.io/phonebill/product-service:latest
+        image: acrdigitalgarage02.azurecr.io/phonebill/product-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8083
@@ -41,20 +43,22 @@ spec:
           httpGet:
             path: /actuator/health
             port: 8083
-          initialDelaySeconds: 30
+          failureThreshold: 30
           periodSeconds: 10
-          failureThreshold: 6
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
+            path: /actuator/health
             port: 8083
-          initialDelaySeconds: 10
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
         livenessProbe:
           httpGet:
-            path: /actuator/health/liveness
+            path: /actuator/health
             port: 8083
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 5
           failureThreshold: 3
